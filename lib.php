@@ -23,25 +23,3 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-
-
-	
-	/**
-	 * core\event\course_module_completion_updatedevent handler
-	 *
-	 * @param core\event\course_module_completion_updated $event The event.
-	 * @return void
-	 */
-	 
-	 /*
-	function block_ratings_handle_module_completion(core\event\course_module_completion_updated $event) {
-		global $DB, $USER;
-		$rec = new $stdClass();
-		$rec->new=1;
-		$rec->userid=$event->userid;
-		$rec->activityid=$event->contextinstanceid;
-		$rec->courseid=	$event->courseid;	
-		$rec->logdate = time();
-		$DB->delete_records('block_homework', array('cmid' => $event->contextinstanceid));
-	}
-	*/
