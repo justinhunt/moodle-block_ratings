@@ -59,7 +59,9 @@ M.block_ratings.popuphelper = {
 		
 		//make our contents block visible
 		var cb = Y.one('.block_ratings-form-container');
-		cb.set('style.display','block');
+		if(cb){
+			cb.set('style.display','block');
+		}
  
 		
 		//if we wish to show a dialog on load, there will be data in currentassig
@@ -94,6 +96,7 @@ M.block_ratings.popuphelper = {
     		'&activityid=' + this.currentassig.activityid +
     		'&itemid=' + this.currentassig.itemid +
     		'&ratearea=' + this.currentassig.ratearea +
+			'&heading=' + this.currentassig.ratearea +
     		'&rating=' + rating;
 
         this.yuiobj.io(uri);

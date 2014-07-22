@@ -26,6 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 //get our ratings mod
 require_once($CFG->dirroot . '/local/ratings/lib.php');
+require_once($CFG->dirroot . '/blocks/ratings/lib.php');
 
 class block_ratings extends block_list {
 
@@ -50,6 +51,21 @@ class block_ratings extends block_list {
 		$config = get_config('block_ratings');
 	}
 	
+	
+	//try to get the homework course the user is enrolled in for My Moodle page
+        //If a user is on more than one course, there will need to be some change to this
+        //global $COURSE should work though, if in the course itself
+        if(!$course || $course->id<2){
+        	$ratingscourses = block_ratings_fetch_user_courses($USER->id,10);
+        	if(count($ratingscourses) > 0){
+        		$ratingscourse = array_pop($ratingscourses);
+        	}else{
+        		$ratingscourse = false;
+        	}
+        }else{
+        	$ratingscourse = $course;
+        }
+
 	//set a title for this rateare
 	//in first phase we won't need this
 	//$this->title = get_string('blocktitle4area', 'block_ratings', get_string($this->config->ratearea, 'block_ratings'));
@@ -58,10 +74,10 @@ class block_ratings extends block_list {
 	$ratearea = $config->ratearea;
 	
 	//Fetch all the mods in the course
-	$mods = get_array_of_activities($course->id);
+	$mods = get_array_of_activities($ratingscourse->id);
 	$jsargses = array();
 	foreach($mods as $mod){
-		$jsargses[$mod->cm] = $this->fetch_assignment_info_json($course->id,$mod->cm ,$ratearea, $mod);
+		$jsargses[$mod->cm] = $this->fetch_assignment_info_json($ratingscourse->id,$mod->cm ,$ratearea, $mod);
 	}
 	
 	//set up our panelid and class
@@ -83,9 +99,14 @@ class block_ratings extends block_list {
 	$this->content->icons = array();
 	$this->content->footer = '';
 	
-	//Is there a recently completed mod, we should show a rating form for?
-	$rec = $DB->get_record('block_ratings_log',array('userid'=>$USER->id, 'new'=>1, 'courseid'=>$course->id));
-	if($rec){
+	
+	//update our completionlog
+	$this->update_completion_log($ratingscourse);
+	
+	//Is there a recently completed mod, we should show a rating form for? just handle the first one
+	$records = $DB->get_records('block_ratings_log',array('userid'=>$USER->id, 'new'=>1, 'courseid'=>$ratingscourse->id));
+	if($records){	
+		$rec = array_shift($records);
 		$DB->set_field('block_ratings_log', 'new', 0, array('id'=>$rec->id));
 		$recentlyfinished = $rec->activityid;
 	}else{
@@ -128,7 +149,7 @@ class block_ratings extends block_list {
         $currentcontext = $this->page->context->get_course_context(false);
 
 		//fetch any existing ratings to show in block
-		$recs = $DB->get_records('local_rating',array('userid'=>$USER->id, 'courseid'=>$course->id, 'ratearea'=>$config->ratearea));
+		$recs = $DB->get_records('local_rating',array('userid'=>$USER->id, 'courseid'=>$ratingscourse->id, 'ratearea'=>$config->ratearea));
 		$activityids=array();
 		if($recs){
 			foreach($recs as $rec){
@@ -146,7 +167,7 @@ class block_ratings extends block_list {
 					continue;
 				}
 				
-				$assiginfo = $this->fetch_assignment_info_json($course->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
+				$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
 				 $this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$rec->rating, $config->allow_rerate);
 			}
 		}
@@ -159,7 +180,7 @@ class block_ratings extends block_list {
 		}
 		
 		$unrated_recs = $DB->get_records_sql('SELECT * FROM {block_ratings_log} WHERE userid = ' . $USER->id. 
-			' AND courseid = ' . $course->id . 
+			' AND courseid = ' . $ratingscourse->id . 
 			$notclause );
 		if($unrated_recs){
 			foreach($unrated_recs as $rec){
@@ -171,7 +192,7 @@ class block_ratings extends block_list {
 					continue;
 				}
 				
-				$assiginfo = $this->fetch_assignment_info_json($course->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
+				$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
 				 $this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$unrated);
 			}
 		}
@@ -196,7 +217,36 @@ class block_ratings extends block_list {
 		return $jsargs;
 	}
 
-	
+	public function update_completion_log($course){
+		global $DB, $USER;
+		$where = "courseid = " . $course->id . " AND userid = " . $USER->id;
+		$activityids = $DB->get_fieldset_select('block_ratings_log','activityid',$where);
+		if(!$activityids){$activityids=array();}
+		
+		$completion = new completion_info($course);
+		$mods = get_array_of_activities($course->id);
+		//print_r($activityids);
+		$newactarray = array_flip($activityids);
+		//	print_r($newactarray);
+		foreach($mods as $mod){
+			
+			if(!array_key_exists($mod->cm,$newactarray)){
+			//if(array_search($mod->id,$activityids)==false){
+			//	echo "<br />" . $mod->cm;
+			//	array_push($activityids,$mod->id);
+				$data = $completion->get_data($mod, false, $USER->id);
+				if($data->completionstate == COMPLETION_COMPLETE){
+					$log = new stdClass();
+					$log->userid=$USER->id;
+					$log->courseid=$course->id;
+					$log->activityid=$mod->cm;
+					$log->new=1;
+					$log->logdate=time();
+					$DB->insert_record('block_ratings_log',$log);
+				}
+			}
+		}
+	}	
 
     // my moodle can only have SITEID and it's redundant here, so take it away
     public function applicable_formats() {
@@ -210,6 +260,7 @@ class block_ratings extends block_list {
                      'mod-quiz' => false);
                      */
          return array('all' => false,
+						'my'=>true,
                      'course-view' => true);
     }
 
