@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 //get our ratings mod
 require_once($CFG->dirroot . '/local/ratings/lib.php');
 require_once($CFG->dirroot . '/blocks/ratings/lib.php');
+require_once($CFG->dirroot . '/course/lib.php');
 
 class block_ratings extends block_list {
 
