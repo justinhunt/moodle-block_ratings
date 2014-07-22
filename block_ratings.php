@@ -61,6 +61,7 @@ class block_ratings extends block_list {
         		$ratingscourse = array_pop($ratingscourses);
         	}else{
         		$ratingscourse = false;
+				return;
         	}
         }else{
         	$ratingscourse = $course;
