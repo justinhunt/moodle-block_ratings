@@ -222,26 +222,28 @@ class block_ratings extends block_list {
 	public function update_completion_log($course){
 		global $DB, $USER;
 		$where = "courseid = " . $course->id . " AND userid = " . $USER->id;
-		$activityids = $DB->get_fieldset_select('block_ratings_log','activityid',$where);
-		if(!$activityids){$activityids=array();}
+		$loggedactivityids = $DB->get_fieldset_select('block_ratings_log','activityid',$where);
+		if(!$loggedactivityids ){$loggedactivityids =array();}
 		
 		$completion = new completion_info($course);
-		$mods = get_array_of_activities($course->id);
-		//print_r($activityids);
-		$newactarray = array_flip($activityids);
-		//	print_r($newactarray);
-		foreach($mods as $mod){
+		$coursemods = get_array_of_activities($course->id);
+		//print_r($loggedactivityids );
+		$newactarray = array_flip($loggedactivityids);
+		//print_r($newactarray);
+		//echo('<br />');
+		foreach($coursemods as $coursemod){
 			
-			if(!array_key_exists($mod->cm,$newactarray)){
-			//if(array_search($mod->id,$activityids)==false){
-			//	echo "<br />" . $mod->cm;
-			//	array_push($activityids,$mod->id);
+			if(!array_key_exists($coursemod->cm,$newactarray)){
+				//the coursemod is NOT a normal mod (ie from fast_mod_info)
+				//we need to make a fake on here.
+				$mod = new stdClass();
+				$mod->id = $coursemod->cm;
 				$data = $completion->get_data($mod, false, $USER->id);
 				if($data->completionstate == COMPLETION_COMPLETE){
 					$log = new stdClass();
 					$log->userid=$USER->id;
 					$log->courseid=$course->id;
-					$log->activityid=$mod->cm;
+					$log->activityid=$coursemod->cm;
 					$log->new=1;
 					$log->logdate=time();
 					$DB->insert_record('block_ratings_log',$log);

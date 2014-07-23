@@ -28,14 +28,14 @@ $settings->add(new admin_setting_heading('ratingsheader',
                                          get_string('label_ratingsconfig', 'block_ratings'),
                                          get_string('desc_ratingsconfig', 'block_ratings')));
                                          
-$yesnooptions = array(0 => 'No','1' => 'Yes');
+$yesnooptions = array(0 => 'No',1 => 'Yes');
 
-$settings->add(new admin_setting_configselect('ratings/show_old_ratings', 
+$settings->add(new admin_setting_configselect('block_ratings/show_old_ratings', 
 		get_string('label_show_old_ratings', 'block_ratings'),  
 		get_string('desc_show_old_ratings', 'block_ratings'), 
 		1, $yesnooptions));
 		
-$settings->add(new admin_setting_configselect('ratings/allow_rerate', 
+$settings->add(new admin_setting_configselect('block_ratings/allow_rerate', 
 		get_string('label_rerate_block', 'block_ratings'),  
 		get_string('desc_rerate_block', 'block_ratings'), 
 		1, $yesnooptions));
