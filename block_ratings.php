@@ -221,6 +221,10 @@ class block_ratings extends block_list {
 
 	public function update_completion_log($course){
 		global $DB, $USER;
+		
+		//$DB->delete_records('block_ratings_log');
+		//$DB->delete_records('local_rating');
+		
 		$where = "courseid = " . $course->id . " AND userid = " . $USER->id;
 		$loggedactivityids = $DB->get_fieldset_select('block_ratings_log','activityid',$where);
 		if(!$loggedactivityids ){$loggedactivityids =array();}
