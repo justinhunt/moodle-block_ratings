@@ -2,8 +2,10 @@
 .block_ratings-buttons-container {height: 170px; margin-left: auto;margin-right: auto;width: 95%; padding-top: 5px}
 .block_ratings-buttons-container input[type="image"] {width: 100px;height: 100px}
 
-.block_ratings-itembutton-container {text-align: center; width: 90px; display block; float: left; padding-right: 20px}
-.block_ratings-itembutton-container input[type="image"] {width: 70px;height: 70px}
+.block_ratings-itembutton-container {text-align: center;  vertical-align: middle; display: block; float: left; padding-right: 20px; font-size: 0.875em; }
+.block_ratings-itembutton-titletext {color: #E02633; padding-left: 7px;  vertical-align: middle; line-height: 35px;}
+.block_ratings-itembutton-ratingtext {}
+.block_ratings-itembutton-container input[type="image"] {width: 25px;height: 25px;}
 
 .block_ratings-idontknow {text-align: center;}
 .block_ratings-form-container {width: 740px; height: 240px; text-align: center}
