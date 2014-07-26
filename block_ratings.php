@@ -18,7 +18,7 @@
  * ratings block caps.
  *
  * @package    block_ratings
- * @copyright  Justin Hunt <danielneis@gmail.com>
+ * @copyright  Justin Hunt <poodllsupport@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/local/ratings/lib.php');
 require_once($CFG->dirroot . '/blocks/ratings/lib.php');
 require_once($CFG->dirroot . '/course/lib.php');
+require_once($CFG->dirroot . '/local/family/lib.php');
 
 class block_ratings extends block_list {
 
@@ -53,11 +54,24 @@ class block_ratings extends block_list {
 	}
 	
 	
-	//try to get the homework course the user is enrolled in for My Moodle page
+		//Get the ratings user.
+		$childid =  optional_param('childid',0, PARAM_INT); //the userid of the user whose homework we are showing		
+		$ratingsuser = false;
+		if($childid && local_family_is_users_child($childid)){
+			$ratingsuser = $DB->get_record('user',array('id'=>$childid));
+		}else{
+			$ratingsuser = $USER;
+		}
+		if(!$ratingsuser){return;}
+		
+		//if we are logged in as a user who is NOT the child we set parentmode. to deactivate links
+		$parentmode=!($ratingsuser->id==$USER->id);
+		
+		//try to get the ratings course the user is enrolled in for My Moodle page
         //If a user is on more than one course, there will need to be some change to this
         //global $COURSE should work though, if in the course itself
         if(!$course || $course->id<2){
-        	$ratingscourses = block_ratings_fetch_user_courses($USER->id,10);
+        	$ratingscourses = block_ratings_fetch_user_courses($ratingsuser->id,10);
         	if(count($ratingscourses) > 0){
         		$ratingscourse = array_pop($ratingscourses);
         	}else{
@@ -67,8 +81,9 @@ class block_ratings extends block_list {
         }else{
         	$ratingscourse = $course;
         }
+		
 
-	//set a title for this rateare
+	//set a title for this ratearea
 	//in first phase we won't need this
 	//$this->title = get_string('blocktitle4area', 'block_ratings', get_string($this->config->ratearea, 'block_ratings'));
 	
@@ -103,17 +118,20 @@ class block_ratings extends block_list {
 	
 	
 	//update our completionlog
-	$this->update_completion_log($ratingscourse);
+	$this->update_completion_log($ratingscourse,$ratingsuser);
 	
 	//Is there a recently completed mod, we should show a rating form for? just handle the first one
-	$records = $DB->get_records('block_ratings_log',array('userid'=>$USER->id, 'new'=>1, 'courseid'=>$ratingscourse->id));
-	if($records){	
-		$rec = array_shift($records);
-		$DB->set_field('block_ratings_log', 'new', 0, array('id'=>$rec->id));
-		$recentlyfinished = $rec->activityid;
-	}else{
-		$recentlyfinished = false;
+	//if we are in parent mode, don't show any popup
+	$recentlyfinished = false;
+	if(!$parentmode){
+		$records = $DB->get_records('block_ratings_log',array('userid'=>$ratingsuser->id, 'new'=>1, 'courseid'=>$ratingscourse->id));
+		if($records){	
+			$rec = array_shift($records);
+			$DB->set_field('block_ratings_log', 'new', 0, array('id'=>$rec->id));
+			$recentlyfinished = $rec->activityid;
+		}
 	}
+	
 	$unrated=0;
 	if($recentlyfinished){
 		$current_assig_json = $jsargses[$recentlyfinished];
@@ -147,32 +165,32 @@ class block_ratings extends block_list {
 	$dialog = html_writer::div($newcontent, 'block_ratings_popup', array('id'=>$panelid));
 
 
-        // user/index.php expect course context, so get one if page has module context.
-        $currentcontext = $this->page->context->get_course_context(false);
+	// user/index.php expect course context, so get one if page has module context.
+	$currentcontext = $this->page->context->get_course_context(false);
 
-		//fetch any existing ratings to show in block
-		$recs = $DB->get_records('local_rating',array('userid'=>$USER->id, 'courseid'=>$ratingscourse->id, 'ratearea'=>$config->ratearea));
-		$activityids=array();
-		if($recs){
-			foreach($recs as $rec){
-				$activityids[]=$rec->activityid;
-				if(!$config->show_old_ratings){
-					continue;
-				}
-				
-				if(!array_key_exists( $rec->activityid, $mods)){
-					continue;
-				}
-				
-				//continue if we already have a rating item for this (recently completed output above)
-				if($rec->activityid == $recentlyfinished){
-					continue;
-				}
-				
-				$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
-				 $this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$rec->rating, $config->allow_rerate);
+	//fetch any existing ratings to show in block
+	$recs = $DB->get_records('local_rating',array('userid'=>$ratingsuser->id, 'courseid'=>$ratingscourse->id, 'ratearea'=>$config->ratearea));
+	$activityids=array();
+	if($recs){
+		foreach($recs as $rec){
+			$activityids[]=$rec->activityid;
+			if(!$config->show_old_ratings){
+				continue;
 			}
+			
+			if(!array_key_exists( $rec->activityid, $mods)){
+				continue;
+			}
+			
+			//continue if we already have a rating item for this (recently completed output above)
+			if($rec->activityid == $recentlyfinished){
+				continue;
+			}
+			
+			$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
+			 $this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$rec->rating, $config->allow_rerate,$parentmode);
 		}
+	}
 		
 		//fetch any finished but unrated ones to show in block
 		if(count($activityids) > 0){
@@ -181,7 +199,7 @@ class block_ratings extends block_list {
 			$notclause  = '';
 		}
 		
-		$unrated_recs = $DB->get_records_sql('SELECT * FROM {block_ratings_log} WHERE userid = ' . $USER->id. 
+		$unrated_recs = $DB->get_records_sql('SELECT * FROM {block_ratings_log} WHERE userid = ' . $ratingsuser->id. 
 			' AND courseid = ' . $ratingscourse->id . 
 			$notclause );
 		if($unrated_recs){
@@ -195,7 +213,7 @@ class block_ratings extends block_list {
 				}
 				
 				$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
-				 $this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$unrated);
+				 $this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$unrated,true,$parentmode);
 			}
 		}
         
@@ -219,13 +237,13 @@ class block_ratings extends block_list {
 		return $jsargs;
 	}
 
-	public function update_completion_log($course){
+	public function update_completion_log($course,$ratingsuser){
 		global $DB, $USER;
 		
 		//$DB->delete_records('block_ratings_log');
 		//$DB->delete_records('local_rating');
 		
-		$where = "courseid = " . $course->id . " AND userid = " . $USER->id;
+		$where = "courseid = " . $course->id . " AND userid = " . $ratingsuser->id;
 		$loggedactivityids = $DB->get_fieldset_select('block_ratings_log','activityid',$where);
 		if(!$loggedactivityids ){$loggedactivityids =array();}
 		
@@ -242,10 +260,10 @@ class block_ratings extends block_list {
 				//we need to make a fake on here.
 				$mod = new stdClass();
 				$mod->id = $coursemod->cm;
-				$data = $completion->get_data($mod, false, $USER->id);
+				$data = $completion->get_data($mod, false, $ratingsuser->id);
 				if($data->completionstate == COMPLETION_COMPLETE){
 					$log = new stdClass();
-					$log->userid=$USER->id;
+					$log->userid=$ratingsuser->id;
 					$log->courseid=$course->id;
 					$log->activityid=$coursemod->cm;
 					$log->new=1;

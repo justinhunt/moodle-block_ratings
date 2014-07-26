@@ -29,10 +29,10 @@
  */
 class block_ratings_renderer extends plugin_renderer_base {
 
-	public function fetch_rating_history_item($panelid,$assiginfo, $assigid, $assigname, $ratearea, $rating, $rerate=true) {
+	public function fetch_rating_history_item($panelid,$assiginfo, $assigid, $assigname, $ratearea, $rating, $rerate=true,$parentmode=false) {
 		global $CFG;
 		$itemheading = html_writer::tag('span',$assigname,  array('class'=>'block_rating-item-title'));
-		if($rerate){
+		if($rerate && !$parentmode){
 			$itembuttonurl = "M.block_ratings.popuphelper.showpanel('$panelid','$assiginfo')";
 		}else{
 			$itembuttonurl = "";
