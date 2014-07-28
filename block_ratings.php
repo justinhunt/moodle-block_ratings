@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 //get our ratings mod
-require_once($CFG->dirroot . '/local/ratings/lib.php');
+//require_once($CFG->dirroot . '/local/ratings/lib.php');
 require_once($CFG->dirroot . '/blocks/ratings/lib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/local/family/lib.php');
@@ -38,12 +38,7 @@ class block_ratings extends block_list {
 
     function get_content() {
         global $CFG,  $DB, $USER;
-        
-        //Set up all the things we need from local_ratings
-       // $this->page->requires->jquery();
-       	$this->page->requires->css('/local/ratings/css/style.css'); //For like/unlike, rating &commenting
-		$this->page->requires->js('/local/ratings/js/ratings.js'); //For like/unlike, rating &commenting
-        $this->page->requires->js('/local/ratings/js/rate.js'); //For like/unlike, rating &commenting
+      
         $course = $this->page->course;
         $renderer = $this->page->get_renderer('block_ratings');
 
@@ -169,7 +164,7 @@ class block_ratings extends block_list {
 	$currentcontext = $this->page->context->get_course_context(false);
 
 	//fetch any existing ratings to show in block
-	$recs = $DB->get_records('local_rating',array('userid'=>$ratingsuser->id, 'courseid'=>$ratingscourse->id, 'ratearea'=>$config->ratearea));
+	$recs = $DB->get_records('block_ratings',array('userid'=>$ratingsuser->id, 'courseid'=>$ratingscourse->id, 'ratearea'=>$config->ratearea));
 	$activityids=array();
 	if($recs){
 		foreach($recs as $rec){

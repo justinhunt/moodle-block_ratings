@@ -91,7 +91,7 @@ M.block_ratings.popuphelper = {
     },
     
     sendmessage: function(panelid, rating){
-    	var uri = M.cfg.wwwroot + '/local/ratings/update.php' +
+    	var uri = M.cfg.wwwroot + '/blocks/ratings/update.php' +
     		'?courseid=' + this.currentassig.courseid +
     		'&activityid=' + this.currentassig.activityid +
     		'&itemid=' + this.currentassig.itemid +
