@@ -47,6 +47,11 @@ class block_ratings extends block_list {
 	} else{	
 		$config = get_config('block_ratings');
 	}
+	//there is a discrepancy between admin and instance settings
+	//se we make sure they look the same here.
+	if(!is_array($config->rateable)){
+		$config->rateable = explode(',',$config->rateable);
+	}
 	
 	
 		//Get the ratings user.
@@ -61,6 +66,8 @@ class block_ratings extends block_list {
 		
 		//if we are logged in as a user who is NOT the child we set parentmode. to deactivate links
 		$parentmode=!($ratingsuser->id==$USER->id);
+		//always false at the moment. Later might use to retain JS but not show block
+		$hidemode = false;
 		
 		//try to get the ratings course the user is enrolled in for My Moodle page
         //If a user is on more than one course, there will need to be some change to this
@@ -113,7 +120,7 @@ class block_ratings extends block_list {
 	
 	
 	//update our completionlog
-	$this->update_completion_log($ratingscourse,$ratingsuser);
+	$this->update_completion_log($ratingscourse,$ratingsuser, $config->rateable);
 	
 	//Is there a recently completed mod, we should show a rating form for? just handle the first one
 	//if we are in parent mode, don't show any popup
@@ -130,7 +137,7 @@ class block_ratings extends block_list {
 	$unrated=0;
 	if($recentlyfinished){
 		$current_assig_json = $jsargses[$recentlyfinished];
-		$this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$current_assig_json,$recentlyfinished,$mods[$recentlyfinished]->name,$ratearea,$unrated);
+		$this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$current_assig_json,$recentlyfinished,$mods[$recentlyfinished]->name,$ratearea,$unrated,null,null,$config->bigicons);
 	}else{
 		$current_assig_json=null;
 	}
@@ -164,7 +171,12 @@ class block_ratings extends block_list {
 	$currentcontext = $this->page->context->get_course_context(false);
 
 	//fetch any existing ratings to show in block
-	$recs = $DB->get_records('block_ratings',array('userid'=>$ratingsuser->id, 'courseid'=>$ratingscourse->id, 'ratearea'=>$config->ratearea));
+	if(!property_exists($config, 'maxitems')){
+		$config->maxitems = 5;
+	}
+	$recs = $DB->get_records('block_ratings',
+		array('userid'=>$ratingsuser->id, 'courseid'=>$ratingscourse->id, 'ratearea'=>$config->ratearea),
+		'time DESC','*');
 	$activityids=array();
 	if($recs){
 		foreach($recs as $rec){
@@ -183,7 +195,9 @@ class block_ratings extends block_list {
 			}
 			
 			$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
-			 $this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$rec->rating, $config->allow_rerate,$parentmode);
+			 if(!$hidemode && count($this->content->items) < $config->maxitems){
+			 	$this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$rec->rating, $config->allow_rerate,$parentmode,$config->bigicons);
+			}
 		}
 	}
 		
@@ -208,7 +222,9 @@ class block_ratings extends block_list {
 				}
 				
 				$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
-				 $this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$unrated,true,$parentmode);
+				 if(!$hidemode){
+					$this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$unrated,true,$parentmode,$config->bigicons);
+				}
 			}
 		}
         
@@ -216,7 +232,8 @@ class block_ratings extends block_list {
         if(!$recentlyfinished && count($this->content->items)==0){
         	return null;
         }else{
-        	$this->content->items[]  = $dialog;
+        	//$this->content->items[]  = $dialog;
+        	$this->content->footer= $dialog; 
         	return $this->content;
         }
     }
@@ -225,14 +242,14 @@ class block_ratings extends block_list {
 		$args = new stdClass();
 		$args->courseid=$courseid;
 		$args->activityid=$mod->cm;
-		$args->activityname=$mod->name;
+		$args->activityname=htmlspecialchars($mod->name, ENT_QUOTES);
 		$args->itemid=1;
 		$args->ratearea=$ratearea;
 		$jsargs = json_encode($args);
 		return $jsargs;
 	}
 
-	public function update_completion_log($course,$ratingsuser){
+	public function update_completion_log($course,$ratingsuser, $rateable){
 		global $DB, $USER;
 		
 		//$DB->delete_records('block_ratings_log');
@@ -253,20 +270,25 @@ class block_ratings extends block_list {
 			if(!array_key_exists($coursemod->cm,$newactarray)){
 				//the coursemod is NOT a normal mod (ie from fast_mod_info)
 				//we need to make a fake on here.
-				$mod = new stdClass();
-				$mod->id = $coursemod->cm;
-				$data = $completion->get_data($mod, false, $ratingsuser->id);
-				if($data->completionstate == COMPLETION_COMPLETE){
-					$log = new stdClass();
-					$log->userid=$ratingsuser->id;
-					$log->courseid=$course->id;
-					$log->activityid=$coursemod->cm;
-					$log->new=1;
-					$log->logdate=time();
-					$DB->insert_record('block_ratings_log',$log);
-				}
-			}
-		}
+			//echo($coursemod->mod);
+				//if this is rateable
+				if(in_array($coursemod->mod, $rateable)){
+				//if(array_key_exists($coursemod->mod, $rateable)){
+					$mod = new stdClass();
+					$mod->id = $coursemod->cm;
+					$data = $completion->get_data($mod, false, $ratingsuser->id);
+					if($data->completionstate == COMPLETION_COMPLETE){
+						$log = new stdClass();
+						$log->userid=$ratingsuser->id;
+						$log->courseid=$course->id;
+						$log->activityid=$coursemod->cm;
+						$log->new=1;
+						$log->logdate=time();
+						$DB->insert_record('block_ratings_log',$log);
+					}//end of if complete
+				}//end of if rateable
+			}//end of if arraykeyexists
+		}//end of for each
 	}	
 
     // my moodle can only have SITEID and it's redundant here, so take it away

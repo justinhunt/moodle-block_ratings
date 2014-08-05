@@ -29,7 +29,7 @@
  */
 class block_ratings_renderer extends plugin_renderer_base {
 
-	public function fetch_rating_history_item($panelid,$assiginfo, $assigid, $assigname, $ratearea, $rating, $rerate=true,$parentmode=false) {
+	public function fetch_rating_history_item($panelid,$assiginfo, $assigid, $assigname, $ratearea, $rating, $rerate=true,$parentmode=false, $bigmode=false) {
 		global $CFG;
 		$itemheading = html_writer::tag('span',$assigname,  array('class'=>'block_ratings-itembutton-titletext'));
 		$itemtext = html_writer::tag('span',get_string($ratearea . '_' . $rating, 'block_ratings'),  array('class'=>'block_ratings-item-ratingtext'));
@@ -38,13 +38,24 @@ class block_ratings_renderer extends plugin_renderer_base {
 		}else{
 			$itembuttonurl = "";
 		}
-		$itembutton_html = html_writer::empty_tag('input', array('type'=>'image',
+
+		$itembigbutton_html = html_writer::empty_tag('input', array('type'=>'image',
 		  		'class'=>'yui3-button block_ratings-item-button','id'=>'block_ratings-item-' . $ratearea .'-' . $assigid,
 		  		'onclick'=>$itembuttonurl,
 		  		'src'=>$CFG->wwwroot . '/blocks/ratings/pix/' . $ratearea . '0' . $rating . '.png'));
+		  		
+		$itemsmallbutton_html = html_writer::empty_tag('input', array('type'=>'image',
+		  		'class'=>' block_ratings-item-button','id'=>'block_ratings-item-' . $ratearea .'-' . $assigid,
+		  		'onclick'=>$itembuttonurl,
+		  		'src'=>$CFG->wwwroot . '/blocks/ratings/pix/' . $ratearea . '0' . $rating . '.png'));
+		  		
 		//$itembuttonlabel = get_string($ratearea . '_' . $rating, 'block_ratings');
 		//$itembuttonlabel_html = html_writer::link('#', $itembuttonlabel,array('class'=>'block_rating-item-buttonlabel','onclick'=>$itembuttonurl));
-		return html_writer::tag('div', $itembutton_html  . $itemheading  . '<hr />',array('class'=>'block_ratings-itembutton-container'));
+		if($bigmode){
+			return html_writer::tag('div', $itembigbutton_html  . '<br />' . $itemheading  . '<hr />',array('class'=>'block_ratings-bigitembutton-container'));
+		}else{
+			return html_writer::tag('div', $itemsmallbutton_html  .  $itemheading  . '<hr />',array('class'=>'block_ratings-itembutton-container'));
+		}
 	}
 
 	public function fetch_rating_form($panelid,$ratearea) {
