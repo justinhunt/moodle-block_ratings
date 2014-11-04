@@ -34,7 +34,7 @@ class block_ratings_renderer extends plugin_renderer_base {
 		$itemheading = html_writer::tag('span',$assigname,  array('class'=>'block_ratings-itembutton-titletext'));
 		$itemtext = html_writer::tag('span',get_string($ratearea . '_' . $rating, 'block_ratings'),  array('class'=>'block_ratings-item-ratingtext'));
 		if($rerate && !$parentmode){
-			$itembuttonurl = "M.block_ratings.popuphelper.showpanel('$panelid','$assiginfo')";
+			$itembuttonurl = "M.block_ratings.helper.showpanel('$panelid','$assiginfo')";
 		}else{
 			$itembuttonurl = "";
 		}
@@ -63,7 +63,7 @@ class block_ratings_renderer extends plugin_renderer_base {
 		$buttons = array();
 		for ($rating=1;$rating<6;$rating++){
 			
-			$buttonurl = "M.block_ratings.popuphelper.sendmessage('$panelid','$rating')";
+			$buttonurl = "M.block_ratings.helper.sendmessage('$panelid','$rating')";
 
 			$buttonlabel = get_string($ratearea . '_' . $rating, 'block_ratings');
 			$buttonlabel_html = html_writer::link('#', $buttonlabel,array('class'=>'block_ratings-buttonlabel','onclick'=>$buttonurl));
@@ -76,7 +76,7 @@ class block_ratings_renderer extends plugin_renderer_base {
 		  	$buttons[]  = $button_container;
 		}
 		$buttons_html = implode('',$buttons);
-		$idontknow_html = html_writer::link('#', get_string('idontknow', 'block_ratings'),array('class'=>'block_ratings-idontknow','onclick'=>"M.block_ratings.popuphelper.hidepanel('$panelid')"));
+		$idontknow_html = html_writer::link('#', get_string('idontknow', 'block_ratings'),array('class'=>'block_ratings-idontknow','onclick'=>"M.block_ratings.helper.hidepanel('$panelid')"));
 		$buttons_container = html_writer::tag('div', $buttons_html,array('class'=>'block_ratings-buttons-container'));
 		$form_container = html_writer::tag('div', $buttons_container . $idontknow_html,array('class'=>'block_ratings-form-container', 'style'=>'display: none'));
 		$rating_form = $form_container; 

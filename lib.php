@@ -126,4 +126,59 @@ function block_ratings_fetch_user_courses($userid, $limit=1) {
 
 
   }//end of function
+
+
+function block_ratings_fetch_assignment_info_json($courseid, $cmid, $ratearea, $mod){
+		$args = new stdClass();
+		$args->courseid=$courseid;
+		$args->activityid=$mod->cm;
+		$args->activityname=htmlspecialchars($mod->name, ENT_QUOTES);
+		$args->itemid=1;
+		$args->ratearea=$ratearea;
+		$jsargs = json_encode($args);
+		return $jsargs;
+	}
+
+function block_ratings_update_completion_log($course,$ratingsuser, $rateable){
+		global $DB, $USER;
+		
+		//$DB->delete_records('block_ratings_log');
+		//$DB->delete_records('local_rating');
+		
+		$where = "courseid = " . $course->id . " AND userid = " . $ratingsuser->id;
+		$loggedactivityids = $DB->get_fieldset_select('block_ratings_log','activityid',$where);
+		if(!$loggedactivityids ){$loggedactivityids =array();}
+		
+		$completion = new completion_info($course);
+		$coursemods = get_array_of_activities($course->id);
+		//print_r($loggedactivityids );
+		$newactarray = array_flip($loggedactivityids);
+		//print_r($newactarray);
+		//echo('<br />');
+		foreach($coursemods as $coursemod){
+			
+			if(!array_key_exists($coursemod->cm,$newactarray)){
+				//the coursemod is NOT a normal mod (ie from fast_mod_info)
+				//we need to make a fake on here.
+			//echo($coursemod->mod);
+				//if this is rateable
+				if(in_array($coursemod->mod, $rateable)){
+				//if(array_key_exists($coursemod->mod, $rateable)){
+					$mod = new stdClass();
+					$mod->id = $coursemod->cm;
+					//$data = $completion->get_data($mod, false, $ratingsuser->id);
+					$data = $completion->get_data($mod, true, $ratingsuser->id);
+					if($data->completionstate == COMPLETION_COMPLETE){
+						$log = new stdClass();
+						$log->userid=$ratingsuser->id;
+						$log->courseid=$course->id;
+						$log->activityid=$coursemod->cm;
+						$log->new=1;
+						$log->logdate=time();
+						$DB->insert_record('block_ratings_log',$log);
+					}//end of if complete
+				}//end of if rateable
+			}//end of if arraykeyexists
+		}//end of for each
+	}
  

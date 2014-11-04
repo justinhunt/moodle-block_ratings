@@ -25,7 +25,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 //get our ratings mod
-//require_once($CFG->dirroot . '/local/ratings/lib.php');
 require_once($CFG->dirroot . '/blocks/ratings/lib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/local/family/lib.php');
@@ -96,7 +95,7 @@ class block_ratings extends block_list {
 	$mods = get_array_of_activities($ratingscourse->id);
 	$jsargses = array();
 	foreach($mods as $mod){
-		$jsargses[$mod->cm] = $this->fetch_assignment_info_json($ratingscourse->id,$mod->cm ,$ratearea, $mod);
+		$jsargses[$mod->cm] = block_ratings_fetch_assignment_info_json($ratingscourse->id,$mod->cm ,$ratearea, $mod);
 	}
 	
 	//set up our panelid and class
@@ -120,7 +119,7 @@ class block_ratings extends block_list {
 	
 	
 	//update our completionlog
-	$this->update_completion_log($ratingscourse,$ratingsuser, $config->rateable);
+	block_ratings_update_completion_log($ratingscourse,$ratingsuser, $config->rateable);
 	
 	//Is there a recently completed mod, we should show a rating form for? just handle the first one
 	//if we are in parent mode, don't show any popup
@@ -149,6 +148,10 @@ class block_ratings extends block_list {
 	$options['panelid'] = $panelid;
 	$options['width'] = 740;
 	$options['height'] = 240;
+	$options['parentmode'] = $parentmode;
+	$options['courseid'] = $ratingscourse->id;
+	$options['ratearea'] = $ratearea;
+	$options['rateable'] = $config->rateable;
 	$options['currentassig'] = $current_assig_json;
 				
 	
@@ -160,7 +163,7 @@ class block_ratings extends block_list {
 	);
 		
 	//setup our JS call
-	$this->page->requires->js_init_call('M.block_ratings.popuphelper.makepanel', array($options),false,$jsmodule);
+	$this->page->requires->js_init_call('M.block_ratings.helper.makepanel', array($options),false,$jsmodule);
 
 	//create our ratings dialog
 	$newcontent = $renderer->fetch_rating_form($panelid, $ratearea);
@@ -194,7 +197,7 @@ class block_ratings extends block_list {
 				continue;
 			}
 			
-			$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
+			$assiginfo = block_ratings_fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
 			 if(!$hidemode && count($this->content->items) < $config->maxitems){
 			 	$this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$rec->rating, $config->allow_rerate,$parentmode,$config->bigicons);
 			}
@@ -221,7 +224,7 @@ class block_ratings extends block_list {
 					continue;
 				}
 				
-				$assiginfo = $this->fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
+				$assiginfo = block_ratings_fetch_assignment_info_json($ratingscourse->id, $rec->activityid, $ratearea ,$mods[$rec->activityid]);
 				 if(!$hidemode){
 					$this->content->items[]  = $renderer->fetch_rating_history_item($panelid,$assiginfo,$rec->activityid,$mods[$rec->activityid]->name,$ratearea,$unrated,true,$parentmode,$config->bigicons);
 				}
@@ -236,60 +239,7 @@ class block_ratings extends block_list {
         	$this->content->footer= $dialog; 
         	return $this->content;
         }
-    }
-
-	public function fetch_assignment_info_json($courseid, $cmid, $ratearea, $mod){
-		$args = new stdClass();
-		$args->courseid=$courseid;
-		$args->activityid=$mod->cm;
-		$args->activityname=htmlspecialchars($mod->name, ENT_QUOTES);
-		$args->itemid=1;
-		$args->ratearea=$ratearea;
-		$jsargs = json_encode($args);
-		return $jsargs;
-	}
-
-	public function update_completion_log($course,$ratingsuser, $rateable){
-		global $DB, $USER;
-		
-		//$DB->delete_records('block_ratings_log');
-		//$DB->delete_records('local_rating');
-		
-		$where = "courseid = " . $course->id . " AND userid = " . $ratingsuser->id;
-		$loggedactivityids = $DB->get_fieldset_select('block_ratings_log','activityid',$where);
-		if(!$loggedactivityids ){$loggedactivityids =array();}
-		
-		$completion = new completion_info($course);
-		$coursemods = get_array_of_activities($course->id);
-		//print_r($loggedactivityids );
-		$newactarray = array_flip($loggedactivityids);
-		//print_r($newactarray);
-		//echo('<br />');
-		foreach($coursemods as $coursemod){
-			
-			if(!array_key_exists($coursemod->cm,$newactarray)){
-				//the coursemod is NOT a normal mod (ie from fast_mod_info)
-				//we need to make a fake on here.
-			//echo($coursemod->mod);
-				//if this is rateable
-				if(in_array($coursemod->mod, $rateable)){
-				//if(array_key_exists($coursemod->mod, $rateable)){
-					$mod = new stdClass();
-					$mod->id = $coursemod->cm;
-					$data = $completion->get_data($mod, false, $ratingsuser->id);
-					if($data->completionstate == COMPLETION_COMPLETE){
-						$log = new stdClass();
-						$log->userid=$ratingsuser->id;
-						$log->courseid=$course->id;
-						$log->activityid=$coursemod->cm;
-						$log->new=1;
-						$log->logdate=time();
-						$DB->insert_record('block_ratings_log',$log);
-					}//end of if complete
-				}//end of if rateable
-			}//end of if arraykeyexists
-		}//end of for each
-	}	
+    }	
 
     // my moodle can only have SITEID and it's redundant here, so take it away
     public function applicable_formats() {
