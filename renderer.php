@@ -57,6 +57,12 @@ class block_ratings_renderer extends plugin_renderer_base {
 			return html_writer::tag('div', $itemsmallbutton_html  .  $itemheading  . '<hr />',array('class'=>'block_ratings-itembutton-container'));
 		}
 	}
+	
+	public function fetch_no_items_message() {
+		$message = get_string('norecentitems', 'block_ratings');
+		return html_writer::tag('span',$message,  array('class'=>'block_ratings-noitems'));
+	}
+
 
 	public function fetch_rating_form($panelid,$ratearea) {
 		global $CFG;

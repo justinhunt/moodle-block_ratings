@@ -203,6 +203,11 @@ class block_ratings extends block_list {
 			}
 		}
 	}
+	
+	//add a message if we have no ratings at all but we are not hidden
+	if(!$hidemode && count($this->content->items)==0){
+		$this->content->items[]  = $renderer->fetch_no_items_message();
+	}
 		
 		//fetch any finished but unrated ones to show in block
 		if(count($activityids) > 0){

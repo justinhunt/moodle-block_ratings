@@ -62,3 +62,4 @@ $string['desc_rateable'] = 'The type of Moodle activities this ratings block can
 $string['label_maxitems'] = 'Max items to show';
 $string['difficulty'] = 'Difficulty';
 $string['fun'] = 'Fun';
+$string['norecentitems'] = 'No recent ratings';
