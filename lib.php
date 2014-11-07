@@ -150,29 +150,28 @@ function block_ratings_update_completion_log($course,$ratingsuser, $rateable){
 		if(!$loggedactivityids ){$loggedactivityids =array();}
 		
 		$completion = new completion_info($course);
-		$coursemods = get_array_of_activities($course->id);
+		
+		$modinfo = get_fast_modinfo($course, $ratingsuser->id);
+		$coursemods = $modinfo->cms;
+		//$coursemods = get_array_of_activities($course->id);
+		
 		//print_r($loggedactivityids );
 		$newactarray = array_flip($loggedactivityids);
 		//print_r($newactarray);
 		//echo('<br />');
 		foreach($coursemods as $coursemod){
-			
-			if(!array_key_exists($coursemod->cm,$newactarray)){
-				//the coursemod is NOT a normal mod (ie from fast_mod_info)
-				//we need to make a fake on here.
-			//echo($coursemod->mod);
+
+			if(!array_key_exists($coursemod->id,$newactarray)){
 				//if this is rateable
-				if(in_array($coursemod->mod, $rateable)){
-				//if(array_key_exists($coursemod->mod, $rateable)){
-					$mod = new stdClass();
-					$mod->id = $coursemod->cm;
+				if(in_array($coursemod->modname, $rateable)){
+
 					//$data = $completion->get_data($mod, false, $ratingsuser->id);
-					$data = $completion->get_data($mod, true, $ratingsuser->id);
+					$data = $completion->get_data($coursemod, true, $ratingsuser->id);
 					if($data->completionstate == COMPLETION_COMPLETE){
 						$log = new stdClass();
 						$log->userid=$ratingsuser->id;
 						$log->courseid=$course->id;
-						$log->activityid=$coursemod->cm;
+						$log->activityid=$coursemod->id;
 						$log->new=1;
 						$log->logdate=time();
 						$DB->insert_record('block_ratings_log',$log);
@@ -181,4 +180,3 @@ function block_ratings_update_completion_log($course,$ratingsuser, $rateable){
 			}//end of if arraykeyexists
 		}//end of for each
 	}
- 
