@@ -39,5 +39,20 @@ function xmldb_block_ratings_upgrade($oldversion = 0)
         // Ratings savepoint reached.
         upgrade_plugin_savepoint(true, 2014072800, 'block', 'ratings');
     }
+	 if ($oldversion < 2014110702) {
+		// Define table local_rating to be created.
+        $table = new xmldb_table('block_ratings');
+		$field = new xmldb_field('latecompletion', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+		
+		// Conditionally launch add field filename.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+		
+		 // online PoodLL savepoint reached
+        upgrade_plugin_savepoint(true, 2014110702, 'block', 'ratings');
+		
+		
+	 }
 	return true;
 }

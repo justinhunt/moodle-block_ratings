@@ -21,6 +21,9 @@ $heading = optional_param('heading', '', PARAM_TEXT);
 if (! $course = $DB->get_record("course", array("id"=>$courseid))) {
    print_error("Course ID not found");
 }
+//init return values
+$recentlyfinished = false;
+$current_assig_json =false;
 
 switch($action){
 	case 'update':
@@ -48,7 +51,32 @@ switch($action){
 		$return =array('action'=>$action);
 		echo json_encode($return);
 		break;
+		
+	case 'checklatecompletion':	
+		//get the course for this rating
+		$course = get_course($courseid);
+		
+		//rateable, should get from ajax request really
+		$config = get_config('block_ratings');
+		if(!is_array($config->rateable)){
+			$rateable = explode(',',$config->rateable);
+		}else{
+			$rateable = $config->rateable;
+		}
+		
+		//update our completionlog
+		block_ratings_update_completion_log($course,$USER, $rateable);
+
+		//search the log for new completions
+		if(!$parentmode){
+			$records = $DB->get_records('block_ratings_log',array('userid'=>$USER->id, 'new'=>1, 'courseid'=>$courseid));
+			if($records){	
+				$recentlyfinished = true;
+			}
+		}
 	
+		break;
+		
 	case 'fetchrecentcomplete':
 		//get the course for this rating
 		$course = get_course($courseid);
@@ -65,8 +93,6 @@ switch($action){
 		block_ratings_update_completion_log($course,$USER, $rateable);
 
 		//search the log for new completions
-		$recentlyfinished = false;
-		$current_assig_json =false;
 		if(!$parentmode){
 			$records = $DB->get_records('block_ratings_log',array('userid'=>$USER->id, 'new'=>1, 'courseid'=>$courseid));
 			if($records){	
@@ -86,12 +112,12 @@ switch($action){
 				}
 			}
 		}
-	
-		//return details to callback JS on page
-		$return =array('action'=>$action,'panelid'=>$panelid, 'currentassig'=>$current_assig_json);
-		echo json_encode($return);
 		break;
-}
+}//end of switch
+
+//return details to callback JS on page
+$return =array('action'=>$action,'panelid'=>$panelid, 'currentassig'=>$current_assig_json, 'havelatecompletion'=>$recentlyfinished);
+echo json_encode($return);
 ?>
 
 

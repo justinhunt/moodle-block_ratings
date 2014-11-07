@@ -16,8 +16,8 @@
 /**
  * JavaScript library for the Ratings Block.
  *
- * @package    mod
- * @subpackage quizletimport
+ * @package    block
+ * @subpackage ratings
  * @copyright  2014 Justin Hunt  {@link http://poodll.com}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -76,8 +76,15 @@ M.block_ratings.helper = {
     fetchrecentcomplete: function(opts){
     	//we need to add rateable here like this, but its an array..?
     	//'&rateable=' + opts['rateable'] +
+		var action = '';
+		switch (opts['latecompletion']){
+			case 'nothing': return;
+			case 'ajaxcomplete': action = 'fetchrecentcomplete'; break; 
+			case 'pagerefresh': action = 'checklatecompletion'; break;
+		}
+		
     	var uri = M.cfg.wwwroot + '/blocks/ratings/ajaxratings.php' +
-    		'?action=fetchrecentcomplete' +
+    		'?action=' + action +
     		'&courseid=' + opts['courseid'] +
     		'&panelid=' + opts['panelid'] +
     		'&ratearea=' + opts['ratearea'] +
@@ -95,15 +102,19 @@ M.block_ratings.helper = {
        var Y = M.block_ratings.helper.yuiobj;
        var result = Y.JSON.parse(returndata);
        if(result.action=='update'){
-			return;       
-       }else{
+			return;  
+	   }else if(result.action=='checklatecompletion'){
+			if(result.havelatecompletion){
+				location.reload(true);
+			}
+			return;
+	   }else{
 			var currentassig = result.currentassig;
 			var panelid = result.panelid;
 			if(currentassig){
 				M.block_ratings.helper.showpanel(panelid, currentassig);
 			}
         }
-
     },
     
     showpanel: function(panelid,currentassig){

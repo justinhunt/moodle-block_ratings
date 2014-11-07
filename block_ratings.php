@@ -52,6 +52,11 @@ class block_ratings extends block_list {
 		$config->rateable = explode(',',$config->rateable);
 	}
 	
+	//late completion was added later. Lets add it here to be safe
+	if(!property_exists($config,'latecompletion')){
+		$config->latecompletion = get_config('block_ratings')->latecompletion;
+	}
+	
 	
 		//Get the ratings user.
 		$childid =  optional_param('childid',0, PARAM_INT); //the userid of the user whose homework we are showing		
@@ -151,6 +156,7 @@ class block_ratings extends block_list {
 	$options['parentmode'] = $parentmode;
 	$options['courseid'] = $ratingscourse->id;
 	$options['ratearea'] = $ratearea;
+	$options['latecompletion'] = $config->latecompletion;
 	$options['rateable'] = $config->rateable;
 	$options['currentassig'] = $current_assig_json;
 				

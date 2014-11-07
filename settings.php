@@ -45,6 +45,15 @@ $settings->add(new admin_setting_configselect('block_ratings/bigicons',
 		get_string('label_bigicons', 'block_ratings'),  
 		get_string('desc_bigicons', 'block_ratings'), 
 		1, $yesnooptions));
+		
+ $options = array('nothing'=>get_string('nothing','block_ratings'), 
+	'ajaxcomplete'=>get_string('ajaxcomplete','block_ratings'),
+	'pagerefresh'=>get_string('pagerefresh','block_ratings')
+	);
+	
+ $settings->add(new admin_setting_configselect('block_ratings/latecompletion', get_string('label_latecompletion', 'block_ratings'),
+                            get_string('desc_latecompletion', 'block_ratings'),
+                            'nothing',$options)); 
                                                                                      
  $options = array('difficulty'=>get_string('difficulty','block_ratings'), 'fun'=>get_string('fun','block_ratings'));
  $settings->add(new admin_setting_configselect('block_ratings/ratearea', get_string('label_ratearea', 'block_ratings'),

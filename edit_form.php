@@ -20,6 +20,15 @@ class block_ratings_edit_form extends block_edit_form {
         $mform->addElement('selectyesno', 'config_bigicons', get_string('label_bigicons', 'block_ratings'),get_string('desc_bigicons', 'block_ratings'));
         $mform->setDefault('config_bigicons', get_config('bigicons', 'block_ratings'));
           
+		// Late completion
+         $options = array('nothing'=>get_string('nothing','block_ratings'), 
+			'ajaxcomplete'=>get_string('ajaxcomplete','block_ratings'),
+			'pagerefresh'=>get_string('pagerefresh','block_ratings')
+				);
+        $mform->addElement('select', 'config_latecompletion', get_string('label_latecompletion', 'block_ratings'),$options);
+        $mform->setType('config_latecompletion', PARAM_TEXT);
+        $mform->setDefault('config_latecompletion', get_config('latecompletion', 'block_ratings'));  
+		  
         // Ratings Area
         $options = array('difficulty'=>get_string('difficulty','block_ratings'), 'fun'=>get_string('fun','block_ratings'));
         $mform->addElement('select', 'config_ratearea', get_string('label_ratearea', 'block_ratings'),$options);
