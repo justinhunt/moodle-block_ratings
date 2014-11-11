@@ -263,9 +263,7 @@ class block_ratings extends block_list {
                      'mod' => true, 
                      'mod-quiz' => false);
                      */
-         return array('all' => false,
-						'my'=>true,
-                     'course-view' => true);
+         return array('all' => true);
     }
 
     public function instance_allow_multiple() {
