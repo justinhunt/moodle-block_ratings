@@ -165,7 +165,7 @@ class block_ratings extends block_list {
 	$jsmodule = array(
 		'name'     => 'block_ratings',
 		'fullpath' => '/blocks/ratings/module.js',
-		'requires' => array('panel', 'transition', 'json')
+		'requires' => array('panel', 'transition', 'json','io')
 	);
 		
 	//setup our JS call
