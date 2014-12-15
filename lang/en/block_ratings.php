@@ -32,6 +32,7 @@ $string['desc_rerate_block'] = 'Allow students to rate activities again after th
 $string['label_rerate'] = 'Allow re-rate';
 $string['ratings:addinstance'] = 'Add a ratings block';
 $string['ratings:myaddinstance'] = 'Add a ratings block to my moodle';
+$string['ratings:canrate'] = 'Has the ability to rate an activity';
 $string['pluginname'] = 'Ratings';
 $string['blocktitle'] = 'Recent Ratings';
 $string['blocktitle4area'] = 'Recent Ratings: {$a}';

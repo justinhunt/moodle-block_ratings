@@ -37,8 +37,6 @@ $capabilities = array(
     ),
 
     'block/ratings:addinstance' => array(
-        'riskbitmask' => RISK_SPAM | RISK_XSS,
-
         'captype' => 'write',
         'contextlevel' => CONTEXT_BLOCK,
         'archetypes' => array(
